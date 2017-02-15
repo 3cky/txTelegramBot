@@ -44,7 +44,7 @@ setup(
     url='https://github.com/sourcesimian/txTelegramBot',
     download_url="https://github.com/sourcesimian/txTelegramBot/tarball/v0.2",
     license='MIT',
-    packages=['TelegramBot','TelegramBot.plugin','TelegramBot.service','twisted.plugins'],
+    packages=['TelegramBot','TelegramBot.plugin','TelegramBot.service','TelegramBot.client','twisted.plugins'],
     install_requires=['python-dateutil',
                       'Twisted',
                       'requests',

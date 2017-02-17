@@ -48,7 +48,7 @@ setup(
     install_requires=['python-dateutil',
                       'Twisted',
                       'requests',
-                      'TelegramBotAPI==0.3.1',
+                      'TelegramBotAPI==0.3.2',
                       'pyPlugin==0.1.2',
                       ],
 )

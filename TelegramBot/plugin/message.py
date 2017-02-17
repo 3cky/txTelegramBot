@@ -11,7 +11,7 @@ class MessagePlugin(object):
     def stopPlugin(self):
         pass
 
-    def on_message(self, msg):
+    def on_update(self, update):
         pass
 
     def send_method(self, method):

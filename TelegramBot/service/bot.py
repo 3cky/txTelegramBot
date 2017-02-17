@@ -40,7 +40,7 @@ class BotService(service.Service):
         log.msg("UPDATE: " + str(update))
 
         for plugin in self._msg_plugins:
-            handled = yield defer.maybeDeferred(plugin.on_message, update)
+            handled = yield defer.maybeDeferred(plugin.on_update, update)
             if handled:
                 break
 

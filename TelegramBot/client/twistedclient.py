@@ -82,7 +82,7 @@ class TwistedClient(service.Service):
             for update in updates:
                 self._offset = update.update_id + 1
                 try:
-                    yield defer.maybeDeferred(self._on_update, update.message)
+                    yield defer.maybeDeferred(self._on_update, update)
                 except Exception as e:
                     # import traceback
                     # log.msg(traceback.format_exc())

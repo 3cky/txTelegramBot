@@ -13,3 +13,6 @@ twisted/plugins/dropin.cache
 dist/
 config.ini
 TelegramBotAPI
+/.project
+/.pydevproject
+/build/

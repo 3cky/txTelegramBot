@@ -1,23 +1,35 @@
-from TelegramBotAPI.client.requestsclient import RequestsClient
+from TelegramBotAPI.client.baseclient import BaseClient
 from TelegramBotAPI.types.methods import getUpdates
 
 from twisted.application import service
-from twisted.internet import reactor, threads, defer
+from twisted.internet import reactor, defer
 from twisted.python import log
+from twisted.web import http
 
+import treq
 
-class TwistedClient(service.Service):
+class RequestError(Exception):
+    def __init__(self, value, err_code=-1):
+        self.value = value
+        self.err_code = err_code
+    def __str__(self):
+        s = repr(self.value)
+        if self.err_code > 0:
+            s = "HTTP Error: " + str(self.err_code) + "\n" + s
+        return s
+
+class TwistedClient(service.Service, BaseClient):
     name = 'telegrambot_client'
 
+    _request_timeout = 120
     _limit = 10
-    _timeout = 5
-    _lock = None
+    _poll_timeout = 30
     _poll = True
     _offset = None
     _poll_backoff = 0
 
     def __init__(self, token, on_update, proxy=None, debug=False):
-        self._lock = defer.DeferredLock()
+        super(TwistedClient, self).__init__(token, debug)
         self._token = token
         self._proxy = proxy
         self._debug = debug
@@ -25,59 +37,70 @@ class TwistedClient(service.Service):
         self._on_update = on_update
 
     def startService(self):
-        self._client = RequestsClient(self._token, proxy=self._proxy, debug=self._debug)
-        reactor.callLater(0, self._poll_updates)
+        reactor.callLater(0, self._poll_updates_loop)
 
     def stopService(self):
         self._poll = False
 
-    def send_method(self, m):
-        d = self._lock.acquire()
+    @defer.inlineCallbacks
+    def send_method(self, method):
+        try:
+            url = self._get_post_url(method)
+            params, data = self.__get_post_params_and_data(method)
 
-        def do_send(_):
-            return threads.deferToThread(self._send_thread, m)
+            resp = yield treq.post(url, params=params, data=data, timeout=self._request_timeout)
 
-        def do_release(value):
-            self._lock.release()
-            return value
+            if resp.code != http.OK:
+                err_info = yield treq.content(resp)
+                raise RequestError(str(err_info), resp.code)
 
-        d.addCallback(do_send)
-        d.addBoth(do_release)
+            value = yield treq.json_content(resp)
 
-        return d
+            defer.returnValue(self._interpret_response(value, method))
+        except Exception as e:
+            if isinstance(e, RequestError):
+                raise e
+            raise RequestError(e)
 
-    def _send_thread(self, m):
-        resp = self._client.send_method(m)
-        return resp
+    def __get_post_params_and_data(self, method):
+        params = method._to_raw()
+        data = {}
+        for k in list(params.keys()):
+            from io import BufferedReader
+            if isinstance(params[k], BufferedReader):
+                import os
+                data[k] = (os.path.split(params[k].name)[1], params[k])
+                del params[k]
+        return params, data
 
     @defer.inlineCallbacks
-    def _poll_updates(self, _=None):
+    def _poll_updates_loop(self, _=None):
         while self._poll:
-            yield threads.deferToThread(self._poll_updates_thread)
+            yield self._poll_updates()
             if self._poll_backoff:
+                log.msg('Backing off updates poll for %s second(s)' % self._poll_backoff)
                 d = defer.Deferred()
                 reactor.callLater(self._poll_backoff, d.callback, None)
-                log.msg('Backing off update poll for %s' % self._poll_backoff)
                 self._poll_backoff = 0
                 yield d
 
-    def _poll_updates_thread(self):
+    @defer.inlineCallbacks
+    def _poll_updates(self):
         m = getUpdates()
-        m.timeout = self._timeout
+        m.timeout = self._poll_timeout
         m.limit = self._limit
         if self._offset is not None:
             m.offset = self._offset
         try:
-            updates = self._client.send_method(m)
-            reactor.callFromThread(self._handle_updates, updates)
+            updates = yield self.send_method(m)
+            yield self._handle_updates_result(updates)
         except Exception as e:
-            reactor.callFromThread(self._handle_updates_error, e)
+            self._handle_updates_error(e)
             # import traceback
             # log.msg(traceback.format_exc())
 
     @defer.inlineCallbacks
-    def _handle_updates(self, updates):
-
+    def _handle_updates_result(self, updates):
         if updates:
             for update in updates:
                 self._offset = update.update_id + 1
@@ -90,6 +113,6 @@ class TwistedClient(service.Service):
                     pass
 
     def _handle_updates_error(self, e):
-        raise e
-        log.msg(e)
-        self._poll_backoff = 5
+        if self._poll:
+            log.msg("Updates fetching error: %s" % e)
+            self._poll_backoff = 5

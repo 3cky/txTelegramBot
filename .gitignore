@@ -16,3 +16,4 @@ TelegramBotAPI
 /.project
 /.pydevproject
 /build/
+__pycache__

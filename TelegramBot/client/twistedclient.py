@@ -79,10 +79,10 @@ class TwistedClient(service.Service, BaseClient):
             yield self._poll_updates()
             if self._poll_backoff:
                 log.msg('Backing off updates poll for %s second(s)' % self._poll_backoff)
-                d = defer.Deferred()
-                reactor.callLater(self._poll_backoff, d.callback, None)
-                self._poll_backoff = 0
-                yield d
+            d = defer.Deferred()
+            reactor.callLater(self._poll_backoff, d.callback, None)
+            self._poll_backoff = 0
+            yield d
 
     @defer.inlineCallbacks
     def _poll_updates(self):
@@ -93,7 +93,7 @@ class TwistedClient(service.Service, BaseClient):
             m.offset = self._offset
         try:
             updates = yield self.send_method(m)
-            yield self._handle_updates_result(updates)
+            reactor.callFromThread(self._handle_updates_result, updates)
         except Exception as e:
             self._handle_updates_error(e)
             # import traceback

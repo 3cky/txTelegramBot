@@ -14,20 +14,23 @@ class BotService(service.Service):
     _client = None
     _msg_plugins = None
 
-    def __init__(self, plugin_filespec):
+    def __init__(self, plugin_filespec=None, plugins=[]):
+        self._msg_plugins = plugins
         self._plugin_filespec = plugin_filespec
 
     @defer.inlineCallbacks
     def startService(self):
         self._client = self.parent.getServiceNamed('telegrambot_client')
 
-        log.msg([p for p in PluginLoader(MessagePlugin, self._plugin_filespec)])
-        self._msg_plugins = [p(self.send_method) for p in PluginLoader(MessagePlugin,
-                                                                       self._plugin_filespec)]
+        if self._plugin_filespec is not None:
+            plugins = PluginLoader(MessagePlugin, self._plugin_filespec)
+            log.msg([p for p in plugins])
+            self._msg_plugins.extend([p() for p in plugins])
 
         self._msg_plugins.sort(key=lambda p: p.priority)
 
         for plugin in self._msg_plugins:
+            plugin._bot = self
             yield defer.maybeDeferred(plugin.startPlugin)
 
     @defer.inlineCallbacks

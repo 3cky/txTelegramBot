@@ -2,8 +2,8 @@
 class MessagePlugin(object):
     priority = 100
 
-    def __init__(self, cb_send_method):
-        self.__cb_send_method = cb_send_method
+    def __init__(self):
+        self._bot = None
 
     def startPlugin(self):
         pass
@@ -15,4 +15,4 @@ class MessagePlugin(object):
         pass
 
     def send_method(self, method):
-        return self.__cb_send_method(method)
+        return self._bot is not None and self._bot.send_method(method)

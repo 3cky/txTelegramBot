@@ -3,7 +3,7 @@ from TelegramBotAPI.types.methods import getUpdates
 
 from twisted.application import service
 from twisted.internet import reactor, defer
-from twisted.python import log
+from twisted.python import log, failure
 from twisted.web import http
 
 import treq
@@ -109,10 +109,12 @@ class TwistedClient(service.Service, BaseClient):
                 except Exception as e:
                     # import traceback
                     # log.msg(traceback.format_exc())
-                    log.msg(e)
+                    f = failure.Failure()
+                    log.err(f, e)
                     pass
 
     def _handle_updates_error(self, e):
         if self._poll:
-            log.msg("Updates fetching error: %s" % e)
+            f = failure.Failure()
+            log.err(f, "Updates fetching error: %s" % e)
             self._poll_backoff = 5

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
+import six
 
 from twisted.python import log, failure
 from twisted.internet import reactor, defer
@@ -98,7 +99,7 @@ class BotPlugin(UpdatePlugin):
 
         message_handled = True
 
-        if isinstance(cmd_result, str):
+        if isinstance(cmd_result, six.string_types):
             yield self.send_message(msg.chat.id, cmd_result)
         elif isinstance(cmd_result, Method):
             yield self.send_method(cmd_result)

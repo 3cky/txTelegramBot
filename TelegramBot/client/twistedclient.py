@@ -8,15 +8,18 @@ from twisted.web import http
 
 import treq
 
+
 class RequestError(Exception):
     def __init__(self, value, err_code=-1):
         self.value = value
         self.err_code = err_code
+
     def __str__(self):
         s = repr(self.value)
         if self.err_code > 0:
             s = "HTTP Error: " + str(self.err_code) + "\n" + s
         return s
+
 
 class TwistedClient(service.Service, BaseClient):
     name = 'telegrambot_client'
@@ -37,7 +40,7 @@ class TwistedClient(service.Service, BaseClient):
         self._on_update = on_update
 
     def startService(self):
-        reactor.callLater(0, self._poll_updates_loop)
+        reactor.callLater(0, self._poll_updates_loop)  # @UndefinedVariable
 
     def stopService(self):
         self._poll = False
@@ -62,6 +65,11 @@ class TwistedClient(service.Service, BaseClient):
                 raise e
             raise RequestError(e)
 
+    def _interpret_response(self, value, method):
+        if self._debug:
+            log.msg('Method: %s\nResponse: %s\n' % (method, value))
+        return super(TwistedClient, self)._interpret_response(value, method)
+
     def __get_post_params_and_data(self, method):
         params = method._to_raw()
         data = {}
@@ -80,7 +88,7 @@ class TwistedClient(service.Service, BaseClient):
             if self._poll_backoff:
                 log.msg('Backing off updates poll for %s second(s)' % self._poll_backoff)
             d = defer.Deferred()
-            reactor.callLater(self._poll_backoff, d.callback, None)
+            reactor.callLater(self._poll_backoff, d.callback, None)  # @UndefinedVariable
             self._poll_backoff = 0
             yield d
 
@@ -93,7 +101,7 @@ class TwistedClient(service.Service, BaseClient):
             m.offset = self._offset
         try:
             updates = yield self.send_method(m)
-            reactor.callFromThread(self._handle_updates_result, updates)
+            reactor.callFromThread(self._handle_updates_result, updates)  # @UndefinedVariable
         except Exception as e:
             self._handle_updates_error(e)
             # import traceback
@@ -102,6 +110,8 @@ class TwistedClient(service.Service, BaseClient):
     @defer.inlineCallbacks
     def _handle_updates_result(self, updates):
         if updates:
+            if self._debug:
+                log.msg("getUpdates: %s\n" % updates)
             for update in updates:
                 self._offset = update.update_id + 1
                 try:

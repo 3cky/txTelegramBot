@@ -77,7 +77,7 @@ class BotPlugin(UpdatePlugin):
             defer.returnValue(False)
 
         cmd_start = cmd_entity.offset+1
-        cmd_end = cmd_start+cmd_entity.length
+        cmd_end = cmd_start+cmd_entity.length-1
 
         cmd = msg.text[cmd_start:cmd_end]
         cmd_args = msg.text[cmd_end:].strip()

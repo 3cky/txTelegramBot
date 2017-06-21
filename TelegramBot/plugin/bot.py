@@ -21,7 +21,7 @@ class BotPlugin(UpdatePlugin):
     @defer.inlineCallbacks
     def send_method(self, method):
         if self._bot is None:
-            return defer.returnValue(False)
+            defer.returnValue(False)
 
         # throttle method send, if needed
         last_message_send_elapsed = time.time() - self._last_message_send

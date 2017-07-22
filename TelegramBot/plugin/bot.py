@@ -109,7 +109,7 @@ class BotPlugin(UpdatePlugin):
         defer.returnValue(message_handled)
 
     @defer.inlineCallbacks
-    def on_command(self, cmd, cmd_args, cmd_msg):
+    def on_command(self, cmd, cmd_args=None, cmd_msg=None):
         cmd_method = "on_command_" + cmd
         if hasattr(self, cmd_method):
             cmd_result = yield defer.maybeDeferred(getattr(self, cmd_method), cmd_args, cmd_msg)
@@ -126,8 +126,10 @@ class BotPlugin(UpdatePlugin):
 
     @defer.inlineCallbacks
     def on_inline_query(self, _inline_query):
-        defer.returnValue(False)
+        r = yield defer.succeed(False)
+        return r
 
     @defer.inlineCallbacks
     def on_callback_query(self, _callback_query):
-        defer.returnValue(False)
+        r = yield defer.succeed(False)
+        return r

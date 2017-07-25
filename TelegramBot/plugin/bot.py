@@ -127,9 +127,9 @@ class BotPlugin(UpdatePlugin):
     @defer.inlineCallbacks
     def on_inline_query(self, _inline_query):
         r = yield defer.succeed(False)
-        return r
+        defer.returnValue(r)
 
     @defer.inlineCallbacks
     def on_callback_query(self, _callback_query):
         r = yield defer.succeed(False)
-        return r
+        defer.returnValue(r)

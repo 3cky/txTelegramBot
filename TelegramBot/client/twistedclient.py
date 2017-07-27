@@ -49,9 +49,9 @@ class TwistedClient(service.Service, BaseClient):
     def send_method(self, method):
         try:
             url = self._get_post_url(method)
-            params, data = self.__get_post_params_and_data(method)
+            params, files = self.__get_post_params_and_files(method)
 
-            resp = yield treq.post(url, params=params, data=data, timeout=self._request_timeout)
+            resp = yield treq.post(url, params=params, files=files, timeout=self._request_timeout)
 
             if resp.code != http.OK:
                 err_info = yield treq.content(resp)
@@ -70,16 +70,17 @@ class TwistedClient(service.Service, BaseClient):
             log.msg('Method: %s\nResponse: %s\n' % (method, value))
         return super(TwistedClient, self)._interpret_response(value, method)
 
-    def __get_post_params_and_data(self, method):
+    def __get_post_params_and_files(self, method):
+        import os
+        from io import BytesIO
         params = method._to_raw()
-        data = {}
+        files = {}
         for k in list(params.keys()):
-            from io import BufferedReader
-            if isinstance(params[k], BufferedReader):
-                import os
-                data[k] = (os.path.split(params[k].name)[1], params[k])
+            if isinstance(params[k], BytesIO) or os.path.isfile(params[k]):
+                files[k] = (os.path.split(params[k].name)[1], params[k])
                 del params[k]
-        return params, data
+
+        return params, files
 
     @defer.inlineCallbacks
     def _poll_updates_loop(self, _=None):

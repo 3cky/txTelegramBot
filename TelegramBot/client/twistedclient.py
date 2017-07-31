@@ -6,6 +6,8 @@ from twisted.internet import reactor, defer
 from twisted.python import log, failure
 from twisted.web import http
 
+import six
+
 import treq
 
 
@@ -76,8 +78,12 @@ class TwistedClient(service.Service, BaseClient):
         params = method._to_raw()
         files = {}
         for k in list(params.keys()):
-            if isinstance(params[k], BytesIO) or os.path.isfile(params[k]):
-                files[k] = (os.path.split(params[k].name)[1], params[k])
+            v = params[k]
+            if isinstance(v, BytesIO):
+                files[k] = (os.path.split(v.name)[1], v)
+                del params[k]
+            elif isinstance(v, six.string_types) and os.path.isfile(v):
+                files[k] = (os.path.split(v)[1], os.open(v))
                 del params[k]
 
         return params, files

@@ -1,5 +1,4 @@
 from distutils.core import setup
-import os
 
 # When pip installs anything from packages, py_modules, or ext_modules that
 # includes a twistd plugin (which are installed to twisted/plugins/),
@@ -28,8 +27,7 @@ else:
         pkgs = dict.fromkeys(
             [_top_level_package(k)
                 for k in cmd.distribution.iter_distribution_names()
-                if _top_level_package(k) != "twisted"
-            ]
+                if _top_level_package(k) != "twisted"]
         )
         cmd.write_file("top-level names", filename, '\n'.join(pkgs) + '\n')
 
@@ -44,7 +42,9 @@ setup(
     url='https://github.com/sourcesimian/txTelegramBot',
     download_url="https://github.com/sourcesimian/txTelegramBot/tarball/v0.2",
     license='MIT',
-    packages=['TelegramBot','TelegramBot.plugin','TelegramBot.service','TelegramBot.client','twisted.plugins'],
+    packages=['TelegramBot', 'TelegramBot.plugin', 'TelegramBot.service',
+              'TelegramBot.client', 'twisted.plugins'],
+    zip_safe=False,
     install_requires=['python-dateutil',
                       'Twisted',
                       'requests',
